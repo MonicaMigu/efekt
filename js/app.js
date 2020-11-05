@@ -9,6 +9,7 @@ window.readJSON = function (fileName) {
 window.domain = "today.line.me"
 
 const articles = window.readJSON("arti_list");
+let domains = null;
 let urls = null;
 var date = new Date();
 var month = date.getMonth() + 1;
@@ -32,6 +33,7 @@ var app = new Vue({
             accTF: undefined
         },
         isSearchPopuped: false,
+        domains,
         urls,
         articles,
         stage: '3',
@@ -42,7 +44,7 @@ var app = new Vue({
         classCheck: []
     },
     mounted() {
-        this.getAPI(window.domain)
+        this.getSnaAPI(window.domain)
     },
     methods: {
         sendSearchData() {
@@ -59,27 +61,57 @@ var app = new Vue({
         },
 
         changeOption(event) {
-            console.log(event.target.value)
-            this.getAPI(window.domain)
+            this.getSnaAPI(window.domain)
         },
 
         changeStartTime(event) {
             var mm = event.getMonth()+1
             this.startTime = event.getFullYear() + '/' + mm + '/' + event.getDate()
-            this.getAPI(window.domain)
+            this.getSnaAPI(window.domain)
         },
 
         changeEndTime(event) {
             var mm = event.getMonth()+1
             this.endTime = event.getFullYear() + '/' + mm + '/' + event.getDate()
-            this.getAPI(window.domain)
+            this.getSnaAPI(window.domain)
         },
 
         selectCheckBox() {
-            this.getAPI(window.domain)
+            for(i=0; i<this.classCheck.length; i++) {
+
+            }
+            this.getDomainAPI()
+            this.getSnaAPI(window.domain)
         },
 
-        getAPI(domain) {
+        getDomainAPI() {
+            const req = new Request('https://140.124.93.123:8070/node_list?start_time=' + this.startTime + '&end_time=' + this.endTime + '&cate=[' + this.classCheck.toString() + ']&cnt_con=3&rr_con=0.1');
+            fetch(req)
+                .then(res => res.json())
+                .then(data => {
+                    this.$data.domains = data
+                    this.setDomainList()
+                })
+        },
+
+        setDomainList() {
+            var dataList = document.getElementById("domains");
+            
+            for(i=0; i<this.domains.length; i++) {
+                var dom = this.domains[i];
+                var opt = document.createElement("option");
+                opt.setAttribute('label', dom.label);
+                opt.setAttribute('value', dom.value);
+                dataList.appendChild(opt);
+            }
+        },
+
+        selectDomain(event) {
+            window.domain = event.target.value
+            this.getSnaAPI(window.domain)
+        },
+
+        getSnaAPI(domain) {
             const req = new Request('https://140.124.93.123:8070/sna_data?domain=' + domain + '&max_deep=' + this.stage + '&start_time=' + this.startTime + '&end_time=' + this.endTime + '&cate=[' + this.classCheck.toString() + ']&cnt_con=3&rr_con=0.1');
 
             window.chartData = null;
@@ -93,12 +125,22 @@ var app = new Vue({
                     window.chartData = data
                     this.$data.urls = window.chartData.nodes
                     this.sna()
+                    this.getArticleAPI()
                 });
+        },
+
+        getArticleAPI() {
+            const req = new Request('https://140.124.93.123:8070/arti_list?start_time=' + this.startTime + '&end_time=' + this.endTime + '&cate=[' + this.classCheck.toString() + ']');
+            fetch(req)
+                .then(res => res.json())
+                .then(data => {
+                    this.articles = data
+                })
         },
 
         sendClickDomain(id) {
             window.domain = id
-            this.getAPI(window.domain)
+            this.getSnaAPI(window.domain)
         },
 
         sna() {

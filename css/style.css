@@ -347,11 +347,21 @@ ul.drop-down-menu li:hover > ul.second-menu { /* 滑鼠滑入展開次選單*/
 
 /* --------------- Report --------------- */
 .vue-datepicker {
+  padding: 0 1rem;;
   display: flex;
 }
 
 .vue-datepicker .vdp-datepicker input {
   text-align: center;
+}
+
+.input-group-addon {
+  margin: 0 1rem;
+}
+
+.selectDomain {
+  text-align: center;
+  margin: 0 1rem;
 }
 
 .textCloud {
@@ -474,15 +484,12 @@ ul.drop-down-menu li:hover > ul.second-menu { /* 滑鼠滑入展開次選單*/
 
 .condition{
   display: flex;
+  margin-bottom: .5rem;
 }
 
 .condition-title{
   font-size: 1rem;
   margin: 0 0.3rem 0;
-}
-
-.condistion-content{
-  padding: 0 0 1rem 0;
 }
 
 .date-select{
@@ -507,7 +514,7 @@ select{
 
 input {
   padding: .2rem 2rem;
-  margin: 0 1rem;
+  /* margin: 0 1rem; */
 }
 
 
