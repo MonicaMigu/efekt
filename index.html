@@ -14,10 +14,10 @@
     <!-- custom css -->
     <link rel="stylesheet" href="css/style.css">
     <script src="js/jquery-3.5.1.min.js" async></script>
-    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <!-- <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script> -->
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js" async></script>
-    <script src="https://unpkg.com/vue" async></script>
-
+    <script src="https://cdn.anychart.com/releases/v8/js/anychart-base.min.js"></script>
 </head>
 
 <body>
@@ -65,7 +65,7 @@
                     </div>
                     <div class="qsForm">
                         <div class="form">
-                            <input v-model="article.url" class="articleUrl" type="url" placeholder="請輸入文章連結">
+                            <input v-model="article.url" class="articleUrl" placeholder="請輸入文章連結">
                             <textarea v-model="article.content" name="articleContent" class="articleContent" cols="30"
                                 rows="10" placeholder="請輸入文章內容"></textarea>
                             <button class="btn submit" type="submit" @click="sendSearchData()">送出</button>
@@ -81,15 +81,15 @@
                     </div>
                     <div class="resultBody">
                         <div class="body-content urlTrue">
-                            <p>網址真假值</p>
-                            <p>{{ searchResultData.urlTFvalue }}%</p>
+                            <p>網址可信度</p>
+                            <p>{{ searchResultData.urlTFvalue }}</p>
                         </div>
                         <div class="body-content contentTrue">
-                            <p>內文相似度</p>
-                            <p>{{ searchResultData.contentTFvalue }}%</p>
+                            <p>假文章相似度</p>
+                            <p>{{ searchResultData.contentTFvalue }}</p>
                         </div>
                         <div class="body-content totalScore">
-                            <p>加權真假總分</p>
+                            <p>加權可信度評分</p>
                             <p>{{ searchResultData.accTF }}</p>
                         </div>
                     </div>
@@ -107,7 +107,7 @@
                 <section class="horizontal">
                     <div class="section section-title">
                         <h3>最假類別熱門字詞</h3>
-                        <img src="images/wordCloudClass.svg">
+                        <div id="indexWordcloud" style="height: 400px;"></div>
                     </div>
                     <div class="simRepo-right">
                         <section class="vertical">
@@ -188,21 +188,18 @@
         <!-- /.footer -->
     </div>
 
-    <script>
-        function showResult() {
-            var resultText = document.getElementsByClassName("resultBody");
-            swal({
-                title: "分析結果",
-                text: "網址真假值\t81%\n內文真假值\t81%\n加權真假總分\t81%",
-            });
-        }
-    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/v-charts/lib/index.min.js"></script>
+    <script src="https://cdn.anychart.com/releases/v8/js/anychart-tag-cloud.min.js" async></script>
+    <script src="https://unpkg.com/vuewordcloud"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vuejs-datepicker/1.6.2/vuejs-datepicker.min.js"></script>
     <script src="https://unpkg.com/vuejs-datepicker/dist/locale/translations/zh.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="js/app.js"></script>
+    
 
 </body>
 

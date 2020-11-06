@@ -8,14 +8,24 @@ window.readJSON = function (fileName) {
 
 window.domain = "today.line.me"
 
-const articles = window.readJSON("arti_list");
+let articles = null;
 let domains = null;
 let urls = null;
 var date = new Date();
 var month = date.getMonth() + 1;
 var today = date.getFullYear() + '/' + month + '/' + date.getDate();
+window.chart = null;
+window.indexChart = null;
 
 let selectStartTime = ''
+
+var cnt = 0;
+window.removeWC = function(id) {
+    if(cnt > 0) {
+        document.getElementById(id).childNodes[0].remove()
+    }
+    cnt ++
+}
 
 var app = new Vue({
     el: '#app',
@@ -33,6 +43,8 @@ var app = new Vue({
             accTF: undefined
         },
         isSearchPopuped: false,
+        errorMessage: null,
+        // -----------------------------
         domains,
         urls,
         articles,
@@ -41,14 +53,24 @@ var app = new Vue({
         endTime: today,
         zh: vdp_translation_zh.js,
         format: 'yyyy/MM/dd',
-        classCheck: []
+        classCheck: [],
+        wordCloud: [],
+        lineChartData: {
+            columns: [],
+            rows: []
+        }
     },
     mounted() {
-        this.getSnaAPI(window.domain)
+        if(document.getRootNode().documentURI == "http://127.0.0.1:5500/index.html" || document.getRootNode().documentURI == "https://fakenewstw.tk/index.html" || document.getRootNode().documentURI == "https://fakenewstw.tk/") {
+            this.indexWordCloud()
+        }else if(document.getRootNode().documentURI == "http://127.0.0.1:5500/report.html" || document.getRootNode().documentURI == "https://fakenewstw.tk/report.html") {
+            this.getSnaAPI(window.domain)
+        }
     },
     methods: {
         sendSearchData() {
-            this.mockResultSearchData();
+            // this.mockResultSearchData();
+            this.apiPost();
         },
 
         clearSearchResult() {
@@ -60,7 +82,83 @@ var app = new Vue({
             };
         },
 
-        changeOption(event) {
+        apiPost() {
+            axios.post("https://140.124.93.123:8070/search", this.article)
+                .then(response => {
+                    var domainScore;
+                    var articleScore;
+                    var weightedScore;
+                    
+                    if(response.data.domain_score == undefined) {
+                        domainScore = '－'
+                    }else {
+                        domainScore = response.data.domain_score
+                    }
+
+                    if(response.data.article_score == undefined) {
+                        articleScore = '－'
+                    }else {
+                        articleScore = response.data.article_score
+                    }
+
+                    if(response.data.weighted_score == undefined) {
+                        weightedScore = '－'
+                    }else {
+                        weightedScore = response.data.weighted_score
+                    }
+
+                    this.searchResultData = {
+                        urlTFvalue: domainScore,
+                        contentTFvalue: articleScore,
+                        accTF: weightedScore
+                    }
+                })
+                .catch(error => {
+                    this.errorMessage = error.errorMessage
+                    console.error("There was an error!", error)
+                })
+            this.isSearchPopuped = true;
+        },
+
+        setWordCloud(data, id) {
+            // document.getElementById('wordcloud').childNodes[0].remove()
+            anychart.onDocumentReady(function() {
+                
+                // create a tag (word) cloud chart
+                window.indexChart = anychart.tagCloud(data);
+
+                // set an array of angles at which the words will be laid out
+                indexChart.angles([0])
+                // enable a color range
+                indexChart.colorRange(false);
+                // set the color range length
+                indexChart.colorRange().length('80%');
+
+                indexChart.height('400px')
+                indexChart.maxHeight('400px')
+                
+                // display the word cloud indexChart
+                indexChart.container(id);
+                
+                indexChart.draw();
+
+                setTimeout(window.removeWC(id), 100)
+            });
+        },
+
+        indexWordCloud() {            
+            const req = new Request('https://140.124.93.123:8070/word_cloud?start_time=2012/1/1&end_time=2019/1/1&cate=[1,2,3]')
+            fetch(req)
+                .then(res => res.json())
+                .then(data => {
+                    this.setWordCloud(data, 'indexWordcloud')
+                    console.log(data)
+            })
+        },
+
+        // --------------------------------------------------------------------------
+
+        changeOption() {
             this.getSnaAPI(window.domain)
         },
 
@@ -77,11 +175,24 @@ var app = new Vue({
         },
 
         selectCheckBox() {
-            for(i=0; i<this.classCheck.length; i++) {
-
-            }
             this.getDomainAPI()
             this.getSnaAPI(window.domain)
+        },
+
+        checkAll(cName) {
+            var obj = document.getElementsByName('all')
+            var objOpt = document.getElementsByName(cName)
+            var objLen = objOpt.length
+
+            for(i=0; i<objLen; i++) {
+                if(obj[0].checked == true) {
+                    objOpt[i].checked = true
+
+                }else {
+                    objOpt[i].checked = false
+
+                }
+            }
         },
 
         getDomainAPI() {
@@ -96,12 +207,16 @@ var app = new Vue({
 
         setDomainList() {
             var dataList = document.getElementById("domains");
+            while(dataList.options.length > 0) {
+                dataList.removeChild(document.getElementById("domainOpt"))
+            }
             
             for(i=0; i<this.domains.length; i++) {
                 var dom = this.domains[i];
                 var opt = document.createElement("option");
                 opt.setAttribute('label', dom.label);
                 opt.setAttribute('value', dom.value);
+                opt.setAttribute('id', "domainOpt")
                 dataList.appendChild(opt);
             }
         },
@@ -124,9 +239,62 @@ var app = new Vue({
                 .then(data => {
                     window.chartData = data
                     this.$data.urls = window.chartData.nodes
+                    this.articles = null
                     this.sna()
                     this.getArticleAPI()
+                    this.getWordCloudAPI()
+                    this.getLineChartAPI()
                 });
+        },
+
+        getWordCloudAPI() {
+            const req = new Request('https://140.124.93.123:8070/word_cloud?start_time=' + this.startTime + '&end_time=' + this.endTime + '&cate=[' + this.classCheck.toString() + ']')
+            fetch(req)
+                .then(res => res.json())
+                .then(data => {
+                    this.wordCloud = data
+                    this.setWordCloud(this.wordCloud, 'wordcloud')
+                })
+        },
+
+        setWordCloud(data, id) {
+            // document.getElementById('wordcloud').childNodes[0].remove()
+            anychart.onDocumentReady(function() {
+                
+                // create a tag (word) cloud chart
+                window.chart = anychart.tagCloud(data);
+
+                // set an array of angles at which the words will be laid out
+                chart.angles([0])
+                // enable a color range
+                chart.colorRange(false);
+                // set the color range length
+                chart.colorRange().length('80%');
+
+                chart.height('400px')
+                chart.maxHeight('400px')
+                
+                // display the word cloud chart
+                chart.container(id);
+                
+                chart.draw();
+
+                setTimeout(window.removeWC(id), 100)
+            });
+        },
+
+        getLineChartAPI() {
+            window.lineChartData = null;
+            
+            const req = new Request('https://140.124.93.123:8070/cate_lines?start_time=' + this.startTime + '&end_time=' + this.endTime + '&cate=[' + this.classCheck.toString() + ']&cnt_con=3&rr_con=0.1&csvOrjson=2')
+            fetch(req)
+                .then(res => res.json())
+                .then(data => {
+                    this.lineChartData = {
+                        columns: data.fieldNames,
+                        rows: data.fieldValues
+                    }
+                })
         },
 
         getArticleAPI() {
@@ -155,7 +323,7 @@ var app = new Vue({
             const nodes = window.chartData.nodes.map(d => Object.create(d));
             const rumorRatios = Array.from(new Set(links.map(d => d.rumor_ratio)));
             const lineColors = Array.from(new Set(links.map(d => d.color)));
-            const nodeColor = d3.scaleOrdinal(["Content Farm", "Unknown", "Normal"], ["red", "black", "green"]);
+            const nodeColor = d3.scaleOrdinal(["Content Farm", "Unknown", "Normal"], ["#FF0000", "#000000", "#00FF00"]);
             const color = d3.scaleOrdinal(rumorRatios, lineColors);
         
             const simulation = d3.forceSimulation(nodes)
@@ -262,16 +430,6 @@ var app = new Vue({
                 link.attr("d", linkArc);
                 node.attr("transform", d => `translate(${d.x},${d.y})`);
             });
-        },
-
-        // mock api
-        mockResultSearchData() {
-            this.searchResultData = {
-                urlTFvalue: 67.6,
-                contentTFvalue: 83.345,
-                accTF: 75.47
-            };
-            this.isSearchPopuped = true;
         }
     }
 });
